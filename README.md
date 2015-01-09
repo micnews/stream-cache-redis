@@ -12,40 +12,14 @@ npm install stream-cache-redis
 ```js
 var getSlowStream = require('./my-slow-stream')
 
-var getStream = require('stream-cache-redis')({
-  client: redisClient,
-  key: 'abc',
-  ttl: 60 * 60, // 1 hour
-  get: getSlowStream
+var cachedStream = require('stream-cache-redis')({
+  cache: redisClient, // redis-compatible object (get/set/expire)
+  key: 'abc',         // cache key
+  ttl: 60 * 60,       // expiration in seconds
+  get: getSlowStream  // function that returns a stream
 })
 
-// this will always be fast
-getStream.pipe(process.stdout)
-
-```
-
-
-same as doing this:
-
-```js
-var concat = require('concat-stream')
-var resumer = require('resumer')
-var cache = require('./redisClient')
-
-var out = resumer()
-var key = 'abc'
-
-cache.get(key, function(err, value) {
-  if (!value) {
-    slowStream.pipe(concat(function(val) {
-      cache.set(key, val, function(err) {
-
-      })
-      out.queue(val).end()
-    }))
-    return
-  }
-  out.queue(value).end()
-})
+// this will be faster
+cachedStream.pipe(process.stdout)
 
 ```
