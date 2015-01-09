@@ -1,6 +1,8 @@
 # stream-cache-redis
 Cache a stream in redis
 
+[![Build Status](https://travis-ci.org/micnews/stream-cache-redis.svg)](https://travis-ci.org/micnews/stream-cache-redis)
+
 ## Install
 
 ```
