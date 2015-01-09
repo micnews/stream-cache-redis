@@ -1,0 +1,33 @@
+{
+  "name": "stream-cache-redis",
+  "version": "1.0.0",
+  "description": "Cache a stream in redis",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/micnews/stream-cache-redis.git"
+  },
+  "keywords": [
+    "stream",
+    "cache",
+    "redis"
+  ],
+  "author": "@micnews",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/micnews/stream-cache-redis/issues"
+  },
+  "homepage": "https://github.com/micnews/stream-cache-redis",
+  "devDependencies": {
+    "mocha": "^2.1.0"
+  },
+  "dependencies": {
+    "concat-stream": "^1.4.7"
+  }
+}
