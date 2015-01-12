@@ -1,31 +1,30 @@
+
 var ok = require('assert').ok
 var equal = require('assert').equal
 var Cache = require('..')
 var fs = require('fs')
 var concat = require('concat-stream')
 
-var hit = false
-
 var redisClient = function() {
   var cache = {}
   return {
     get: function(key, cb) {
-      hit = false
-      if (cache[key]) {
-        hit = true
-        return cb(null, cache[key])
-      }
-      cb(new Error('Not found'))
+      process.nextTick(function() {
+        if (cache[key]) return cb(null, cache[key])
+        cb(new Error('Not found'))
+      })
     },
     set: function(key, val, cb) {
       cache[key] = val
-      cb(null)
+      process.nextTick(cb)
     },
     expire: function(key, ttl, cb) {
       setTimeout(function() {
         delete cache[key]
       }, ttl)
-      cb(null)
+      process.nextTick(function() {
+        cb(null)
+      })
     }
   }
 }()
@@ -34,42 +33,71 @@ var getSlowStream = function() {
   return fs.createReadStream(__filename)
 }
 
-var opts = {
-  cache: redisClient,
-  key: 'abc',
-  ttl: 100,
-  get: getSlowStream
-}
-
-it('should getStream', function(done) {
-  Cache(opts).pipe(concat(function(a) {
+it('should create stream on cache miss', function(done) {
+  var miss = false
+  Cache({
+    cache: redisClient,
+    key: String(Math.random()),
+    ttl: 100,
+    get: function() {
+      miss = true
+      return getSlowStream()
+    }
+  }).pipe(concat(function(a) {
     getSlowStream().pipe(concat(function(b) {
-      ok(a.toString() === b.toString(), 'wrong value')
+      ok(a.toString() === b.toString(), 'same value')
+      ok(miss, 'cache miss')
       done()
     }))
   }))
 })
 
-it('should getStream from cache', function(done) {
+it('should read cache on cache hit', function(done) {
+  var key = String(Math.random())
+  var miss = false
+  var opts = {
+    cache: redisClient,
+    key: key,
+    ttl: 100,
+    get: function() {
+      miss = true
+      return fs.createReadStream(__filename)
+    }
+  }
   Cache(opts).pipe(concat(function(a) {
-    getSlowStream().pipe(concat(function(b) {
-      ok(a.toString() === b.toString(), 'wrong value')
-      ok(hit === true, 'not from cache')
+    equal(miss, true, 'cache miss')
+    miss = false
+    Cache(opts).pipe(concat(function(b) {
+      equal(miss, false, 'cache hit')
+      equal(a.toString(), b.toString(), 'same value')
       done()
     }))
   }))
 })
 
 it('should getStream expired cache', function(done) {
-  setTimeout(function() {
-    Cache(opts).pipe(concat(function(a) {
-      getSlowStream().pipe(concat(function(b) {
-        ok(a.toString() === b.toString(), 'wrong value')
-        ok(hit === false, 'should not cache hit')
+  var key = String(Math.random())
+  var miss = false
+  var opts = {
+    cache: redisClient,
+    key: key,
+    ttl: 100,
+    get: function() {
+      miss = true
+      return fs.createReadStream(__filename)
+    }
+  }
+  Cache(opts).pipe(concat(function(a) {
+    equal(miss, true, 'cache miss')
+    miss = false
+    setTimeout(function() {
+      Cache(opts).pipe(concat(function(b) {
+        equal(miss, true, 'cache miss after expiry')
+        equal(a.toString(), b.toString(), 'same value')
         done()
       }))
-    }))
-  }, 200)
+    }, 200)
+  }))
 })
 
 it('should forward errors', function(done) {
@@ -91,4 +119,3 @@ it('should forward errors', function(done) {
     done()
   })
 })
-
