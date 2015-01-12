@@ -15,7 +15,11 @@ var Cache = module.exports = function Cache(opts) {
       if (opts.debug) {
         opts.debug('stream-cache-redis miss: ' + opts.key)
       }
-      opts.get().pipe(concat(function(val) {
+      var stream = opts.get()
+      stream.on('error', function(err) {
+        out.emit('error', err)
+      })
+      stream.pipe(concat(function(val) {
         opts.cache.set(opts.key, val, function(err) {
           if (err) console.log('stream-cache-redis.set:', err)
         })
