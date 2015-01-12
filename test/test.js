@@ -1,4 +1,5 @@
 var ok = require('assert').ok
+var equal = require('assert').equal
 var Cache = require('..')
 var fs = require('fs')
 var concat = require('concat-stream')
@@ -70,3 +71,24 @@ it('should getStream expired cache', function(done) {
     }))
   }, 200)
 })
+
+it('should forward errors', function(done) {
+  var err = new Error
+  var stream = Cache({
+    cache: redisClient,
+    key: String(Math.random()),
+    ttl: 100,
+    get: function() {
+      var stream = getSlowStream()
+      process.nextTick(function() {
+        stream.emit('error', err)
+      })
+      return stream
+    }
+  })
+  stream.on('error', function(_err) {
+    equal(_err, err)
+    done()
+  })
+})
+
