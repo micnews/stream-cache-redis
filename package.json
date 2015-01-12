@@ -1,6 +1,6 @@
 {
   "name": "stream-cache-redis",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cache a stream in redis",
   "main": "index.js",
   "directories": {
