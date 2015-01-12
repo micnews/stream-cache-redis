@@ -8,18 +8,22 @@ var redisClient = function() {
   var cache = {}
   return {
     get: function(key, cb) {
-      if (cache[key]) return cb(null, cache[key])
-      cb(new Error('Not found'))
+      process.nextTick(function() {
+        if (cache[key]) return cb(null, cache[key])
+        cb(new Error('Not found'))
+      })
     },
     set: function(key, val, cb) {
       cache[key] = val
-      cb(null)
+      process.nextTick(cb)
     },
     expire: function(key, ttl, cb) {
       setTimeout(function() {
         delete cache[key]
       }, ttl)
-      cb(null)
+      process.nextTick(function() {
+        cb(null)
+      })
     }
   }
 }()
